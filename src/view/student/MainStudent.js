@@ -1,17 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Formik, Form } from 'formik';
 import ShowData from './ShowData';
+import { getStudent, getFaculty, getMajor } from '../../service/Student.service';
 
 function MainStudent() {
+  const [data, setData] = useState([]);
+  const [dataFaculty, setDataFaculty] = useState([]);
+  const [dataMajor, setDataMajor] = useState([]);
+  const [pagin, setPagin] = useState({
+    totalrow: 0,
+    pagesize: 10,
+    currentpage: 1,
+    totalpage: 1,
+  });
+
+  useEffect(() => {
+    get('', 0, 0, 10, 1);
+    getfaculty();
+    getmajor(0);
+  }, []);
+
+  function get(search, faculty, major, pagesize, currentpage) {
+    let res = getStudent(search, faculty, major, pagesize, currentpage);
+    // console.log(res);
+    setData(res.data);
+    setPagin(res.pagin);
+  }
+
+  function getfaculty() {
+    let res = getFaculty();
+    setDataFaculty(res);
+  }
+
+  function getmajor(facultyId) {
+    let res = getMajor(facultyId);
+    setDataMajor(res);
+  }
+
   return (
     <div className="col-12">
       <Formik
         initialValues={{
-          email: 'boom0928754237@gmail.com',
-          password: '',
+          search: '',
+          faculty: 0,
+          major: 0,
         }}
-        onSubmit={(values, { setSubmitting }) => {
-          console.log();
+        onSubmit={(values) => {
+          get(values.search, values.faculty, values.major);
         }}
       >
         {({ values, errors, touched, setFieldValue }) => (
@@ -20,34 +55,82 @@ function MainStudent() {
               <div className="col-12 col-md-4 px-1 mt-1">
                 <label>ค้นหา</label>
                 <input
+                  value={values.search}
                   type="text"
                   className="form-control"
                   onChange={(e) => {
-                    console.log(e.target.value);
+                    setFieldValue('search', e.target.value);
                   }}
                 />
               </div>
               <div className="col-12 col-md-4 px-1 mt-1">
                 <label>คณะ</label>
-                <select className="form-control form-select">
-                  <option value="">Open this select menu</option>
-                  <option value="1">One</option>
-                  <option value="2">Two</option>
-                  <option value="3">Three</option>
+                <select
+                  value={values.faculty}
+                  className="form-control form-select"
+                  onChange={(e) => {
+                    getmajor(e.target.value);
+                    setFieldValue('faculty', e.target.value);
+                  }}
+                >
+                  <option value={0}>-- เลือกคณะ --</option>
+                  {dataFaculty.map((item, index) => (
+                    <option key={item.id} value={item.id}>
+                      {item.faculty}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="col-12 col-md-4 px-1 mt-1">
                 <label>สาขา</label>
-                <select className="form-control form-select">
-                  <option value="">Open this select menu</option>
-                  <option value="1">One</option>
-                  <option value="2">Two</option>
-                  <option value="3">Three</option>
+                <select
+                  value={values.major}
+                  className="form-control form-select"
+                  onChange={(e) => {
+                    setFieldValue('major', e.target.value);
+                  }}
+                >
+                  <option value={0}>-- เลือกสาขา --</option>
+                  {dataMajor.map((item, index) => (
+                    <option key={item.id} value={item.id}>
+                      {item.major}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
+            <div className="d-flex justify-content-center mt-3">
+              <button
+                type="submit"
+                className="btn btn-info mx-1"
+                onClick={() => {
+                  console.log();
+                }}
+              >
+                ค้นหา
+              </button>
+              <button
+                type="reset"
+                className="btn btn-secondary mx-1"
+                onClick={() => {
+                  get('', 0, 0, 10, 1);
+                  getmajor(0);
+                }}
+              >
+                ล้างค่า
+              </button>
+            </div>
             <div>
-              <ShowData />
+              <ShowData
+                data={data}
+                pagin={pagin}
+                changePage={(page) => {
+                  get(values.search, values.faculty, values.major, pagin.pagesize, page);
+                }}
+                changePageSize={(pagesize) => {
+                  get(values.search, values.faculty, values.major, pagesize, 1);
+                }}
+              />
             </div>
           </Form>
         )}
